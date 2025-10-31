@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crittr"
+version = "0.1.0"
+description = "Creature simulator with physics and rendering"
+authors = [
+  { name="Andrew Gordienko", email="andrew@example.com" }
+]
+license = { text = "MIT" }
+readme = "README.md"
+requires-python = ">=3.9"
+
+dependencies = [
+    "pygame>=2.5",
+    "box2d-py>=2.3"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/yourusername/crittr"
+"Bug Tracker" = "https://github.com/yourusername/crittr/issues"

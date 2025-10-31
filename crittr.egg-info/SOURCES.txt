@@ -1,0 +1,14 @@
+LICENSE
+README.md
+pyproject.toml
+crittr/__init__.py
+crittr/creatures.py
+crittr/physics.py
+crittr/policies.py
+crittr.egg-info/PKG-INFO
+crittr.egg-info/SOURCES.txt
+crittr.egg-info/dependency_links.txt
+crittr.egg-info/requires.txt
+crittr.egg-info/top_level.txt
+crittr/examples/__init__.py
+crittr/examples/demo.py
