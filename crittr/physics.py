@@ -1,12 +1,14 @@
 import random
 import pygame
 import numpy as np
-
-from .creatures import Creature
 from Box2D import (
     b2World, b2PolygonShape, b2_dynamicBody, b2_staticBody,
     b2RevoluteJointDef, b2Filter
 )
+
+from .creatures import Creature
+from .environment_space import ActionSpace
+
 
 class Simulator:
     def __init__(self, creature_number=2, render_mode="human", seed: int = 0, gravity=(0,-10), ppm=20.0):
@@ -26,34 +28,46 @@ class Simulator:
 
         self.render_mode = render_mode
         self.creature_number = creature_number
+        self.action_space = ActionSpace(-2.0, 2.0, (creature_number, 4, 3))
 
     def make_creature(self, NUM_CREATURES):
         self.all_bodies = []
         self.all_joints = []
+        self.creatures = []
 
         for _ in range(NUM_CREATURES):
             x = random.uniform(3, 45)
             y = random.uniform(25, 35)
+            c = Creature(self.world, pos=(x, y))
+            self.creatures.append(c)
+            self.all_bodies.extend(c.bodies)
+            self.all_joints.extend(c.joints)
 
-            creature = Creature(self.world, pos=(x, y))
-            bodies, joints = creature.bodies, creature.joints
 
-            self.all_bodies.extend(bodies)
-            self.all_joints.extend(joints)
+    def step(self, action=None):
+        if action is None:
+            action = self.action_space.sample()
 
-    def step(self, t: int):
-        """Advance simulation and update motors every 20 ticks."""
-        if t % 20 == 0:
-            for j in self.all_joints:
-                j.motorSpeed = random.uniform(-3.0, 3.0)
+        a = np.asarray(action, dtype=np.float32)
+        a = np.clip(a, self.action_space.low, self.action_space.high)
 
-        obs = self._get_obs()
-        reward = self.reward_state()
-        terminated = self.terminated_state()
-        
+        for ci, creature in enumerate(self.creatures):
+            # shape check defensive
+            ai = a[ci] if ci < a.shape[0] else 0.0
+            for li in range(4):
+                for si in range(3):
+                    j = creature.joint_grid[li][si]
+                    speed = float(ai[li, si]) if isinstance(ai, np.ndarray) else 0.0
+                    if j is not None:
+                        j.motorSpeed = speed  # apply
+                    # else: skipped (slot consumed but not applied)
+
+        # physics step
         self.world.Step(1.0/60.0, 6, 2)
 
+        obs = self._get_obs()
         return obs
+
 
     def reward_state(self):
         return 0
@@ -109,3 +123,6 @@ class Simulator:
             bx, by = j.anchorB
             obs.extend([ax, ay, bx, by])
         return np.array(obs, dtype=float)
+    
+    def close(self):
+        pygame.quit()

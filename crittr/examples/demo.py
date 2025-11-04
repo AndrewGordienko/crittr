@@ -7,17 +7,19 @@ env = crittr.make("crittr", creature_number=10, render_mode="human")
 t = 0
 running = True
 
-obs, info = env.reset()
-print("Observation shape:", obs.shape)
-print("First few values:", obs[:8])
+observation, info = env.reset()
+print("Observation shape:", observation.shape)
+print("First few values:", observation[:8])
 
 while running:
+    action = env.action_space.sample()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-    env.step(t)
+    env.step(action)
     env.render()
     t += 1
 
-pygame.quit()
+env.close()
