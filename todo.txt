@@ -6,7 +6,9 @@
 
 IMPLEMENT:
 [x] action = env.action_space.sample()
-[ ] observation, reward, terminated, truncated, info = env.step(action)
+[ ] observation, reward, terminated, info = env.step(action)
+
+dones needs to be fixed up
 
 proper resetting 
 
