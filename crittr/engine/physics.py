@@ -6,7 +6,7 @@ from Box2D import (
 )
 
 from .creatures import Creature
-from .environment_space import ActionSpace
+from ..engine.environment_space import ActionSpace
 from .policies import actor_network
 
 class Simulator:
