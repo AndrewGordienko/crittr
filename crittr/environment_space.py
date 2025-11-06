@@ -8,3 +8,6 @@ class ActionSpace:
 
     def sample(self):
         return np.random.uniform(self.low, self.high, self.shape).astype(np.float32)
+
+    def flatten(self) -> int:
+        return int(np.prod(self.shape))
