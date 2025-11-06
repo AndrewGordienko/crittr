@@ -1,2 +1,0 @@
-pygame>=2.5
-box2d-py>=2.3
