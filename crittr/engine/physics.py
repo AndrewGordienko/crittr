@@ -30,7 +30,7 @@ class Simulator:
         self.creature_number = creature_number
 
         # Fixed, padded action space: (N creatures, 4 legs, 3 segments)
-        self.action_space = ActionSpace(-2.0, 2.0, (creature_number, 4, 3))
+        self.action_space = ActionSpace(-100.0, 100.0, (creature_number, 4, 3))
         self.observation_space = ActionSpace(-2.0, 2.0, (creature_number, 4, 3))
         
         # Per-creature alive mask

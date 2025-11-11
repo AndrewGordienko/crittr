@@ -10,9 +10,16 @@ actor = env.actor
 
 for _ in range(1000):
     env.render()
-    action = env.action_space.sample()
+    # action = env.action_space.sample()
+
     action = actor.act(observation)
-    observation, rewards, dones, info = env.step(action)
+    observation_, rewards, dones, info = env.step(action)
+
+    # agent.memory.add(state, action, reward, state_, done)
+        # agent.learn()
+
+    observation = observation_
+
 
     if np.all(dones):
         observation, info = env.reset()
