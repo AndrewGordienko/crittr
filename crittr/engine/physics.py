@@ -7,7 +7,6 @@ from Box2D import (
 
 from .creatures import Creature
 from ..engine.environment_space import ActionSpace
-from .networks import actor_network
 
 class Simulator:
     def __init__(self, creature_number=2, render_mode="human", seed: int = 0, gravity=(0, -10), ppm=20.0):

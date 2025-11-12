@@ -1,6 +1,6 @@
 import crittr
 import numpy as np
-from crittr.engine.intelligence import Agent
+from crittr.algorithms.continuous_ppo.intelligence import Agent
 
 # create your simulator through the factory
 env = crittr.make("crittr", creature_number=10, render_mode="human")
