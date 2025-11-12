@@ -1,21 +1,22 @@
 import crittr
 import numpy as np
+from crittr.engine.intelligence import Agent
 
 # create your simulator through the factory
 env = crittr.make("crittr", creature_number=10, render_mode="human")
 
 observation, info = env.reset()
 
-actor = env.actor
+agent = Agent(env)
 
 for _ in range(1000):
     env.render()
     # action = env.action_space.sample()
 
-    action = actor.act(observation)
+    action, log_prob, value = agent.choose_action(observation)
     observation_, rewards, dones, info = env.step(action)
 
-    # agent.memory.add(state, action, reward, state_, done)
+    agent.memory.store_memory(observation, action, log_prob, value, rewards, dones)
         # agent.learn()
 
     observation = observation_

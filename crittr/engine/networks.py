@@ -39,29 +39,4 @@ class actor_network(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = torch.tanh(self.fc3(x))  # in [-1, 1]
-        return x
-
-    @torch.no_grad()
-    def act(self, obs_np):
-        """
-        obs_np: numpy array with shape (N, 4, 3) or anything that flattens to obs_dim.
-        Returns: numpy action shaped like env.action_space.shape, scaled to env bounds.
-        """
-        # Flatten observation and make batch of 1
-        obs_np = np.asarray(obs_np, dtype=np.float32).reshape(1, -1)
-        x = torch.as_tensor(obs_np, dtype=torch.float32, device=DEVICE)
-
-        # Network output in [-1, 1]
-        out = self.forward(x)          # (1, action_dim)
-        out = out.squeeze(0).cpu().numpy()  # (action_dim,)
-
-        # Scale from [-1, 1] to [low, high]
-        low = self.env.action_space.low
-        high = self.env.action_space.high
-
-        # low/high can be scalars or arrays; this broadcasts correctly:
-        # [-1,1] -> [0,1] -> [low,high]
-        scaled = low + (out + 1.0) * 0.5 * (high - low)
-
-        # Reshape to action_space.shape, e.g. (N, 4, 3)
-        return scaled.reshape(self.env.action_space.shape)
+        return x    

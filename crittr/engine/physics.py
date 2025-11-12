@@ -7,7 +7,7 @@ from Box2D import (
 
 from .creatures import Creature
 from ..engine.environment_space import ActionSpace
-from .policies import actor_network
+from .networks import actor_network
 
 class Simulator:
     def __init__(self, creature_number=2, render_mode="human", seed: int = 0, gravity=(0, -10), ppm=20.0):
@@ -46,8 +46,6 @@ class Simulator:
 
         # Store last applied action for energy penalty
         self.last_action = np.zeros((self.creature_number, 4, 3), dtype=np.float32)
-
-        self.actor = actor_network(self)
 
     # ---------- World / Entities ----------
 
