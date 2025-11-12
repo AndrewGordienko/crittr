@@ -56,13 +56,25 @@ class Simulator:
         self.all_joints = []
         self.creatures = []
 
-        for _ in range(NUM_CREATURES):
-            x = random.uniform(3, 45)
-            y = random.uniform(25, 35)
-            c = Creature(self.world, pos=(x, y))
+        center_x_world = (self.width / 2.0) / self.ppm
+        ground_top_y = 1.0
+        spawn_y = ground_top_y + 3.0
+
+        for ci in range(NUM_CREATURES):
+            # First half -> left/red, second half -> right/green
+            if ci < NUM_CREATURES // 2:
+                side = "left"
+            else:
+                side = "right"
+
+            x = center_x_world + (ci - (NUM_CREATURES - 1) / 2.0) * 1.0
+            y = spawn_y
+
+            c = Creature(self.world, pos=(x, y), side=side)
             self.creatures.append(c)
-            self.all_bodies.extend(c.bodies)   # list of (body, color)
-            self.all_joints.extend(c.joints)   # list of joints
+            self.all_bodies.extend(c.bodies)
+            self.all_joints.extend(c.joints)
+
 
     # ---------- Step / Reset / Close ----------
 

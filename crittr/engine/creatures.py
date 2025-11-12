@@ -1,38 +1,49 @@
 import random
-import colorsys
 from Box2D import (
     b2World, b2PolygonShape, b2_dynamicBody, b2_staticBody,
     b2RevoluteJointDef, b2Filter
 )
 
-# Base palette (pastel-ish); each creature will get a slight variation
-BASE_TORSO_COLOR = (170, 210, 235)   # light blue base
-BASE_LEG_COLOR   = (255, 182, 193)   # light pink
+# Two torso colors: red team (left flag) and green team (right flag)
+PASTEL_BLUE   = (180, 210, 255)
+PASTEL_PURPLE = (210, 180, 255)
+
+# Leg base color (with small variation)
+BASE_LEG_COLOR = (255, 182, 193)   # light pink
 
 
 class Creature:
-    _color_counter = 0
-    _color_phase = random.random()
-
-    def __init__(self, world, pos=(10, 20)):
+    def __init__(self, world, pos=(10, 20), side="left"):
+        """
+        side: "left"  -> pastel red torso, flag at x ≈ 1 (left side)
+              "right" -> pastel green torso, flag at x ≈ 49 (right side)
+        """
         self.bodies = []
         self.joints = []
         # Fixed slot layout: up to 4 legs × 3 segments
         self.joint_grid = [[None for _ in range(3)] for _ in range(4)]
 
-        # Per-creature torso color (slight variation) and reuse for flag cloth
-        self.torso_color = self._next_pastel_color()
+        self.side = side
+
+        # Torso color determined by side
+        if self.side == "left":
+            self.torso_color = PASTEL_BLUE
+        else:
+            self.torso_color = PASTEL_PURPLE
 
         # Torso
         self.body = world.CreateDynamicBody(position=pos)
         self.body.CreatePolygonFixture(
-            box=(1, 0.5), density=1, friction=0.3,
-            filter=b2Filter(categoryBits=0x0002, maskBits=0x0001)  # collide only with ground (cat 0x0001)
+            box=(1, 0.5),
+            density=1,
+            friction=0.3,
+            # collide only with ground (category 0x0001, which you should give to the ground)
+            filter=b2Filter(categoryBits=0x0002, maskBits=0x0001)
         )
         self.bodies.append((self.body, self.torso_color))
 
         # Ground goal flag (visual only, no collision)
-        self._add_flag(world, pos)
+        self._add_flag(world)
 
         # Generate random legs (colors vary slightly around base)
         num_legs = random.randint(1, 4)
@@ -46,9 +57,13 @@ class Creature:
                 half_w = 0.2
                 half_h = random.uniform(0.3, 0.8)
 
-                leg = world.CreateDynamicBody(position=(leg_anchor[0], leg_anchor[1] - (seg_idx + 1)))
+                leg = world.CreateDynamicBody(
+                    position=(leg_anchor[0], leg_anchor[1] - (seg_idx + 1))
+                )
                 leg.CreatePolygonFixture(
-                    box=(half_w, half_h), density=1, friction=0.3,
+                    box=(half_w, half_h),
+                    density=1,
+                    friction=0.3,
                     filter=b2Filter(categoryBits=0x0002, maskBits=0x0001)  # only ground
                 )
                 self.bodies.append((leg, leg_color))
@@ -76,28 +91,31 @@ class Creature:
 
     # ---------- Helpers ----------
 
-    def _add_flag(self, world, pos):
+    def _add_flag(self, world):
         """
-        Create a larger, non-colliding (sensor + filtered) ground flag ahead of the creature:
+        Create a non-colliding ground flag for this creature:
         - Thin pole planted on y=0
         - Small mount
-        - Right-pointing pennant triangle (like Gym's BipedalWalker)
+        - Right-pointing pennant triangle
         - Pennant color matches this creature's torso color
-        """
-        # Place each creature’s flag ahead along x, pole planted on ground (y=0)
-        self.flag_x = pos[0] + random.uniform(-20, 20)
 
-        # Bigger visuals
+        Reds (side == "left") use a flag near the far left of the world,
+        Greens (side == "right") use a flag near the far right.
+        """
+        # Two fixed flags in world coordinates
+        self.flag_x = 1.0 if self.side == "left" else 49.0
+
+        # Visual dimensions
         pole_height = 3.0
         pole_half_w = 0.08
         pole_half_h = pole_height / 2.0
 
-        # Use a filter that collides with nothing (maskBits=0) and a distinct category (0x0004)
+        # Filter that collides with nothing (maskBits=0)
         flag_filter = b2Filter(categoryBits=0x0004, maskBits=0x0000)
 
-        # Pole centered at (flag_x, pole_half_h) so base sits on ground
+        # Pole centered at (flag_x, pole_half_h + 0.3) so base sits on/just above ground
         flag_pole = world.CreateStaticBody(position=(self.flag_x, pole_half_h + 0.3))
-        pole_fix = flag_pole.CreatePolygonFixture(
+        flag_pole.CreatePolygonFixture(
             box=(pole_half_w, pole_half_h),
             density=0,
             friction=0,
@@ -109,8 +127,10 @@ class Creature:
         pennant_y = pole_height * 0.95 + 0.3
         mount_half_w = 0.12
         mount_half_h = 0.04
-        flag_mount = world.CreateStaticBody(position=(self.flag_x + pole_half_w + mount_half_w, pennant_y))
-        mount_fix = flag_mount.CreatePolygonFixture(
+        flag_mount = world.CreateStaticBody(
+            position=(self.flag_x + pole_half_w + mount_half_w, pennant_y)
+        )
+        flag_mount.CreatePolygonFixture(
             box=(mount_half_w, mount_half_h),
             density=0,
             friction=0,
@@ -118,16 +138,18 @@ class Creature:
             filter=flag_filter
         )
 
-        # Pennant triangle pointing right (larger so it's visible)
+        # Pennant triangle pointing right
         tri_len = 1.2
-        tri_ht  = 0.6
+        tri_ht = 0.6
         tri_vertices = [
             (0.0,  tri_ht / 2.0),   # top at mount
             (0.0, -tri_ht / 2.0),   # bottom at mount
             (tri_len, 0.0),         # tip to the right
         ]
-        flag_tri = world.CreateStaticBody(position=(self.flag_x + pole_half_w + 2 * mount_half_w, pennant_y))
-        tri_fix = flag_tri.CreatePolygonFixture(
+        flag_tri = world.CreateStaticBody(
+            position=(self.flag_x + pole_half_w + 2 * mount_half_w, pennant_y)
+        )
+        flag_tri.CreatePolygonFixture(
             shape=b2PolygonShape(vertices=tri_vertices),
             density=0,
             friction=0,
@@ -136,12 +158,9 @@ class Creature:
         )
 
         # Add to render list:
-        # - pole grey
-        # - mount darker grey
-        # - pennant uses this creature's torso color (so it matches)
-        self.bodies.append((flag_pole, (120, 120, 120)))
-        self.bodies.append((flag_mount, (90, 90, 90)))
-        self.bodies.append((flag_tri, self.torso_color))
+        self.bodies.append((flag_pole, (120, 120, 120)))   # pole grey
+        self.bodies.append((flag_mount, (90, 90, 90)))     # mount darker grey
+        self.bodies.append((flag_tri, self.torso_color))   # pennant matches torso
 
     def vary_color(self, base_color, variation=20):
         r, g, b = base_color
@@ -150,14 +169,3 @@ class Creature:
             min(255, max(0, g + random.randint(-variation, variation))),
             min(255, max(0, b + random.randint(-variation, variation))),
         )
-    
-    def _next_pastel_color(self):
-        golden_turn = 0.38196601125
-        h = (Creature._color_phase + golden_turn * Creature._color_counter) % 1.0
-        Creature._color_counter += 1
-        s = 0.45
-        l = 0.78
-        r, g, b = colorsys.hls_to_rgb(h, l, s)
-        return (int(round(r * 255)), int(round(g * 255)), int(round(b * 255)))
-
-
