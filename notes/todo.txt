@@ -27,13 +27,13 @@ need to look at how dones is done -
 are flags set up at all correctly? should they be on the edge of the screen?
 add values to the observation
 
-sample action space might be too small, not enough movement
+sample action space might be too small, not enough movement  [x]
 
-general refactor - make it more readable like tinygrad
+general refactor - make it more readable like tinygrad [~]
 
 what are we trying to achieve?
 
-action space maybe bigger - the actions arent moving
-nothing is moving
-why are we dropping it from the ceiling
-are the flags in the right spot
+action space maybe bigger - the actions arent moving [x]
+nothing is moving [x]
+why are we dropping it from the ceiling [x]
+are the flags in the right spot [x]

@@ -111,20 +111,48 @@ class Simulator:
         # Advance physics
         self.world.Step(1.0 / 60.0, 6, 2)
 
-        # Outputs
-        observation = self._get_obs()
-        # --- Per-creature reward (vector) ---
-        r_vec = self._get_reward()            # shape (N,), make _get_reward return vector
-
-        # --- Per-creature done; persist deaths ---
+        # --- Per-creature done; detect deaths this step ---
         done_vec = self._get_done()           # shape (N,), True = this creature terminated
+
+        # Newly dead = dead now AND was alive before
+        newly_dead = done_vec & self.alive
+
+        # Freeze newly dead creatures: no more motion, no more motor movement
+        for ci, creature in enumerate(self.creatures):
+            if not newly_dead[ci]:
+                continue
+
+            # Stop torso motion
+            creature.body.linearVelocity = (0.0, 0.0)
+            creature.body.angularVelocity = 0.0
+
+            # Disable all motors and zero speeds
+            for li in range(4):
+                for si in range(3):
+                    j = creature.joint_grid[li][si]
+                    if j is not None:
+                        j.motorSpeed = 0.0
+                        j.enableMotor = False
+        
+            creature.bodies[0] = (creature.bodies[0][0], (255, 120, 120))
+
+            for idx, (body, color) in enumerate(self.all_bodies):
+                if body is creature.body:          # same Box2D body object
+                    self.all_bodies[idx] = (body, (255, 120, 120))
+                    break
+
+        # Persist death status
         self.alive &= ~done_vec               # once dead, stays dead
 
-        # --- VectorEnv API expects arrays, not a single boolean ---
-        terminations = done_vec.astype(bool)                      # (N,)
-        truncations  = np.zeros(self.creature_number, bool)       # (N,) or set True on time-limit
+        # Outputs
+        observation = self._get_obs()
+        r_vec = self._get_reward()            # shape (N,)
 
-        # --- infos: one dict per creature (list of length N) ---
+        # VectorEnv API expects arrays, not a single boolean
+        terminations = done_vec.astype(bool)                # (N,)
+        truncations  = np.zeros(self.creature_number, bool) # (N,) or set True on time-limit
+
+        # infos: one dict per creature (list of length N)
         infos = [
             {"alive": bool(self.alive[ci]), "reward": float(r_vec[ci])}
             for ci in range(self.creature_number)
@@ -134,10 +162,8 @@ class Simulator:
         if self.render_mode == "human":
             self.render()
 
-        # VectorEnv return signature:
         # (obs[N,4,3], rewards[N], terminations[N], truncations[N], infos[list[N]])
         return observation, r_vec.astype(np.float32), terminations, infos
-
 
     def reset(self, seed: int | None = None):
         """Reset the simulation and return (obs, info)."""
@@ -272,13 +298,22 @@ class Simulator:
         """
         Returns a boolean array (creature_number,) where True means that creature is dead.
         Conditions:
-          - torso y too low (hit ground)
-          - torso tilt too large
+        - torso (main body) is touching the ground
+        - torso tilt too large
         """
         done = np.zeros(self.creature_number, dtype=bool)
+
+        ground_top_y = 1.6   # ground box (50,1) at y=0 -> top at y=1
+        torso_half_h = 0.5       # from Creature: box=(1, 0.5)
+
         for ci, c in enumerate(self.creatures):
-            if c.body.position.y < 0.5:
+            torso = c.body
+
+            # bottom of the torso in world coordinates
+            torso_bottom_y = torso.position.y - torso_half_h
+
+            if torso_bottom_y <= ground_top_y + 1e-3:
                 done[ci] = True
-            if abs(c.body.angle) > 1.0:  # ~57 degrees
-                done[ci] = True
+
         return done
+

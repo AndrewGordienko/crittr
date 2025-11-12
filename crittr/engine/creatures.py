@@ -68,6 +68,8 @@ class Creature:
                 )
                 self.bodies.append((leg, leg_color))
 
+                MAX_JOINT_TORQUE = 200.0  # or 500.0 to start
+
                 jd = b2RevoluteJointDef(
                     bodyA=prev,
                     bodyB=leg,
@@ -77,9 +79,10 @@ class Creature:
                     lowerAngle=-0.8,
                     upperAngle=0.8,
                     enableMotor=True,
-                    maxMotorTorque=50.0,
-                    motorSpeed=0.0  # policy controls it
+                    maxMotorTorque=MAX_JOINT_TORQUE,
+                    motorSpeed=0.0
                 )
+
                 j = world.CreateJoint(jd)
                 self.joints.append(j)
 
