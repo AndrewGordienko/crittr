@@ -17,7 +17,7 @@ for _ in range(1000):
     observation_, rewards, dones, info = env.step(action)
 
     agent.memory.store_memory(observation, action, log_prob, value, rewards, dones)
-        # agent.learn()
+    agent.learn()
 
     observation = observation_
 
